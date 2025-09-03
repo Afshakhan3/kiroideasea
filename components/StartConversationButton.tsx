@@ -78,14 +78,19 @@ export function StartConversationButton({
     <button
       onClick={startConversation}
       disabled={loading || !canStartConversation()}
-      className={`flex items-center space-x-1 px-3 py-2 rounded-lg text-sm ${
+      className={`flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 ${
         canStartConversation()
-          ? 'bg-green-600 text-white hover:bg-green-700'
-          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-lg hover:scale-105'
+          : 'bg-gray-200 text-gray-500 cursor-not-allowed'
       }`}
     >
-      <MessageCircle size={16} />
-      <span>{loading ? 'Starting...' : 'Contact'}</span>
+      <MessageCircle size={14} className="sm:w-4 sm:h-4" />
+      <span className="hidden sm:inline">
+        {loading ? 'Starting...' : 'Contact'}
+      </span>
+      <span className="sm:hidden">
+        {loading ? '...' : 'Chat'}
+      </span>
     </button>
   )
 }

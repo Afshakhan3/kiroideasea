@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Heart, MessageCircle, Send } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { StartConversationButton } from './StartConversationButton'
@@ -28,6 +28,16 @@ export function IdeaCard({ idea, user, onLike }: IdeaCardProps) {
   const [showComments, setShowComments] = useState(false)
   const [comment, setComment] = useState('')
   const [comments, setComments] = useState<any[]>([])
+
+  useEffect(() => {
+    // Check if user has liked this idea
+    if (user) {
+      const userLike = idea.likes.find((like: any) => like.user_id === user.id)
+      setIsLiked(!!userLike)
+    } else {
+      setIsLiked(false)
+    }
+  }, [user, idea.id, idea.likes])
 
   const handleLike = async () => {
     if (!user) {
@@ -59,7 +69,12 @@ export function IdeaCard({ idea, user, onLike }: IdeaCardProps) {
   }
 
   const handleComment = async () => {
-    if (!user || !comment.trim()) return
+    if (!user) {
+      alert('Please sign in to comment on ideas')
+      return
+    }
+    
+    if (!comment.trim()) return
 
     try {
       await supabase
@@ -102,86 +117,187 @@ export function IdeaCard({ idea, user, onLike }: IdeaCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="video-card relative">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 border border-gray-100">
+      {/* Video Section */}
+      <div className="relative aspect-[9/16] sm:aspect-video bg-gray-900">
         <video
           src={idea.video_url}
           controls
           className="w-full h-full object-cover"
           poster="/video-placeholder.jpg"
+          preload="metadata"
         />
+        
+        {/* Overlay gradient for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
       </div>
       
-      <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{idea.title}</h3>
-        <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-          {idea.description}
-        </p>
+      {/* Content Section */}
+      <div className="p-4 sm:p-6">
+        {/* Title and Description */}
+        <div className="mb-4">
+          <h3 className="font-bold text-lg sm:text-xl text-gray-900 mb-2 line-clamp-2">
+            {idea.title}
+          </h3>
+          <p className="text-gray-600 text-sm sm:text-base leading-relaxed line-clamp-3">
+            {idea.description}
+          </p>
+        </div>
         
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-gray-500">
-            by {idea.users.name}
-          </span>
-          <span className="text-xs text-gray-400">
-            {new Date(idea.created_at).toLocaleDateString()}
-          </span>
+        {/* Author and Date */}
+        <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <span className="text-white font-semibold text-sm">
+                {idea.users.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <p className="font-medium text-gray-900 text-sm sm:text-base">
+                {idea.users.name}
+              </p>
+              <p className="text-xs sm:text-sm text-gray-500">
+                {new Date(idea.created_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </p>
+            </div>
+          </div>
+          
+          {/* Contact Button - Desktop */}
+          <div className="hidden sm:block">
+            <StartConversationButton
+              ideaGiverId={idea.user_id}
+              ideaGiverName={idea.users.name}
+              currentUser={user}
+            />
+          </div>
         </div>
 
+        {/* Action Buttons */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
             <button
               onClick={handleLike}
-              className={`flex items-center space-x-1 ${
-                isLiked ? 'text-red-500' : 'text-gray-500'
-              } hover:text-red-500`}
+              className={`flex items-center space-x-2 transition-all duration-200 ${
+                isLiked 
+                  ? 'text-red-500 scale-105' 
+                  : 'text-gray-500 hover:text-red-500 hover:scale-105'
+              }`}
             >
-              <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} />
-              <span>{idea.likes.length}</span>
+              <Heart 
+                size={20} 
+                fill={isLiked ? 'currentColor' : 'none'} 
+                className="transition-all duration-200"
+              />
+              <span className="font-medium text-sm sm:text-base">
+                {idea.likes.length}
+              </span>
             </button>
             
             <button
               onClick={toggleComments}
-              className="flex items-center space-x-1 text-gray-500 hover:text-blue-500"
+              className="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-all duration-200 hover:scale-105"
             >
               <MessageCircle size={20} />
-              <span>{idea.comments.length}</span>
+              <span className="font-medium text-sm sm:text-base">
+                {idea.comments.length}
+              </span>
             </button>
           </div>
           
-          <StartConversationButton
-            ideaGiverId={idea.user_id}
-            ideaGiverName={idea.users.name}
-            currentUser={user}
-          />
+          {/* Contact Button - Mobile */}
+          <div className="sm:hidden">
+            <StartConversationButton
+              ideaGiverId={idea.user_id}
+              ideaGiverName={idea.users.name}
+              currentUser={user}
+            />
+          </div>
         </div>
 
+        {/* Comments Section */}
         {showComments && (
-          <div className="mt-4 border-t pt-4">
-            <div className="space-y-2 mb-3 max-h-32 overflow-y-auto">
-              {comments.map((comment) => (
-                <div key={comment.id} className="text-sm">
-                  <span className="font-medium">{comment.users.name}:</span>
-                  <span className="ml-2">{comment.content}</span>
-                </div>
-              ))}
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            {/* Comments List */}
+            <div className="space-y-3 mb-4 max-h-48 overflow-y-auto">
+              {comments.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-4">
+                  No comments yet. Be the first to comment!
+                </p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="flex space-x-3">
+                    <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-semibold text-xs">
+                        {comment.users.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm">
+                        <span className="font-semibold text-gray-900">
+                          {comment.users.name}
+                        </span>
+                        <span className="ml-2 text-gray-700">
+                          {comment.content}
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(comment.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
             
-            {user && (
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Add a comment..."
-                  className="flex-1 px-3 py-2 border rounded-lg text-sm"
-                  onKeyPress={(e) => e.key === 'Enter' && handleComment()}
-                />
-                <button
-                  onClick={handleComment}
-                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  <Send size={16} />
-                </button>
+            {/* Comment Input */}
+            {user ? (
+              <div className="flex space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-semibold text-xs">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 flex space-x-2">
+                  <input
+                    type="text"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Add a comment..."
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onKeyPress={(e) => e.key === 'Enter' && handleComment()}
+                  />
+                  <button
+                    onClick={handleComment}
+                    disabled={!comment.trim()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    <Send size={16} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-gray-500 text-sm mb-3">
+                  Sign in to join the conversation
+                </p>
+                <div className="flex space-x-3 justify-center">
+                  <a
+                    href="/auth/signin"
+                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-full text-sm hover:bg-blue-50 transition-colors"
+                  >
+                    Sign In
+                  </a>
+                  <a
+                    href="/auth/signup"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-full text-sm hover:bg-blue-700 transition-colors"
+                  >
+                    Sign Up
+                  </a>
+                </div>
               </div>
             )}
           </div>
