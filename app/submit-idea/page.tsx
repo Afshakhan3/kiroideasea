@@ -39,18 +39,18 @@ export default function SubmitIdeaPage() {
 
   const canSubmitIdea = () => {
     if (!user) return false
-    
+
     // If user has unlimited plan and is paid
     if (user.plan_type === 'unlimited' && user.is_paid) {
       const expiryDate = new Date(user.expiry_date)
       return expiryDate > new Date()
     }
-    
+
     // If user has single plan and is paid (they can submit one idea)
     if (user.plan_type === 'single' && user.is_paid) {
       return true
     }
-    
+
     return false
   }
 
@@ -74,7 +74,7 @@ export default function SubmitIdeaPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!canSubmitIdea()) {
       setError('Please purchase a plan to submit ideas.')
       return
